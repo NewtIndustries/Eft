@@ -1,3 +1,7 @@
 ﻿//https://github.com/thangchung/awesome-dotnet-core
 //https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration
 //https://emitter.io/develop
+//https://github.com/pardahlman/RawRabbit
+//https://github.com/dotnet-state-machine/stateless
+https://github.com/OctopusDeploy/Halibut
+GPRC for messaging?   
