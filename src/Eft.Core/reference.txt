@@ -1,2 +1,3 @@
 ﻿//https://github.com/thangchung/awesome-dotnet-core
 //https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration
+//https://emitter.io/develop
