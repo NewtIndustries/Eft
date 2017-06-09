@@ -2,6 +2,7 @@
   "version": "1.0.0-*",
 
   "dependencies": {
+    "log4net": "2.0.8",
     "NETStandard.Library": "1.6.1",
     "RethinkDb.Driver": "2.3.19",
     "RethinkDb.Driver.Linq": "2.3.19"
