@@ -10,7 +10,7 @@ namespace Eft.Core.Configuration
 {
     public class RethinkClientConfig 
     {
-        //https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration
+        
         private IEnumerable<IPAddress> ipAddresses;
         private IPoolingStrategy poolingStrategy;
         private bool discover;
