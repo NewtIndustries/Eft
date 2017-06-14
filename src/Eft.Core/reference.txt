@@ -5,3 +5,24 @@
 //https://github.com/dotnet-state-machine/stateless
 https://github.com/OctopusDeploy/Halibut
 GPRC for messaging?   
+	|
+ENGINE SERVER
+	|
+RETHINKDB
+	|-----------------------|------------------------|---------------------|------
+GAME CLUSTER			WEB SERVER				AUTH SERVER			PAYMENT SERVER
+
+
+1)  Engine Cluster
+	This is the server cluster responsible for processing systems on the game world and responding to queued input from players.  It is solely aware of the rethinkdb server and only interacts
+	with same.  
+	ACCESS:  R/W to RethinkDB cluster.
+
+2)	RethinkDb Cluster
+	This is the main storage of the game and represents the entirety of game state.  
+	ACCESS:	NONE
+
+3)	Game Cluster
+	This is the cluster of servers responsible for maintaining connected player states and faithfully representing relevant game state to the player while processing input and queuing it for the next
+	pass of the Engine Cluster.  It is responsible for interest management and client/server communications.  
+	ACCESS: R/W RethinkDB Cluster.
