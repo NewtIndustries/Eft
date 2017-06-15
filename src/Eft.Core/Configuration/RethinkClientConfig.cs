@@ -11,10 +11,16 @@ namespace Eft.Core.Configuration
     public class RethinkClientConfig 
     {
         
-        private IEnumerable<IPAddress> ipAddresses;
+        private ICollection<string> ipAddresses;
         private IPoolingStrategy poolingStrategy;
         private bool discover;
         private IConfigurationRoot root;
+        private string databaseName;
+
+        public ICollection<string> IPAddresses { get { return ipAddresses;} }
+        public IPoolingStrategy PoolingStrategy { get { return poolingStrategy; } }
+        public bool Discover { get { return discover;} }
+        public string DatabaseName { get { return databaseName;} }
 
         public RethinkClientConfig()
         {
@@ -22,6 +28,21 @@ namespace Eft.Core.Configuration
                 new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
                     .AddJsonFile("rethinksettings.json");
             root = builder.Build();
+
+            discover = root["discover"] == "true";
+            databaseName = root["databaseName"];
+            ipAddresses = new List<string>();
+            foreach (var ip in root.GetSection("ipAddresses").GetChildren())
+            {
+                ipAddresses.Add(ip.Value);
+            }
+            switch (root["poolingStrategy"])
+            {
+                default: 
+                    poolingStrategy = new RoundRobinHostPool();
+                    break;
+            }
+
         }
     }
 }
