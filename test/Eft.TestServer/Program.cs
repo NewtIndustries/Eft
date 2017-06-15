@@ -9,8 +9,8 @@ namespace Eft.TestServer
     {
         public static void Main(string[] args)
         {
-            var server = new Eft.Core.Server.GameServer();
-            server.Run().Wait();
+            //var server = new Eft.Core.Server.GameServer();
+            Eft.Core.Server.GameServer.Run().Wait();
         }
     }
 }

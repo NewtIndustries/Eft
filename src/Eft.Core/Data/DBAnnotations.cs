@@ -10,8 +10,13 @@ namespace Eft.Core.Data
     {
         public string Name { get; set; }
     }
-
+    [AttributeUsage(AttributeTargets.Class)]
     public class CustomSerializationAttribute : Attribute
+    {
+        
+    }
+    [AttributeUsage(AttributeTargets.Property)]
+    public class SecondaryIndexAttribute : Attribute
     {
         
     }
