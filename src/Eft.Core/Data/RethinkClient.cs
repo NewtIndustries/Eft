@@ -53,6 +53,12 @@ namespace Eft.Core.Data
 
         private void populateComponentTypes()
         {
+            if (!r.Db(config.DatabaseName).TableList().Contains("Entities"))
+            {
+                r.Db(config.DatabaseName).TableCreate("Entities").Run(pool);
+            }
+
+
             componentTypeMap = new Dictionary<string, Type>();
             foreach (var a in Assembly.GetEntryAssembly().GetReferencedAssemblies())
             {
