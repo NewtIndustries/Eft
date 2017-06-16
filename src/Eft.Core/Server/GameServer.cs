@@ -26,14 +26,14 @@ namespace Eft.Core.Server
         public static async Task  Run()
         {
             //var begin = DateTime.Now;
-            //for (int i = 0; i < 10; i++)
-            //{
-            //    var entity = new Entity();
-            //    entity.AddComponent(new PhysicalObjectComponent());
-            //    db.SaveEntity(entity);
-            //}
+            for (int i = 0; i < 10; i++)
+            {
+                var entity = new Entity();
+                entity.AddComponent(new PhysicalObjectComponent());
+                db.SaveEntity(entity);
+            }
             //var es = db.LoadEntitiesWithComponent<PhysicalObjectComponent>();
-            var es = db.LoadEntitiesByComponentCriteria<PhysicalObjectComponent>(new PhysicalObjectProximityCriteria() {X = 3, Y = 1111}); 
+            //var es = db.LoadEntitiesByComponentCriteria<PhysicalObjectComponent>(new PhysicalObjectProximityCriteria() {X = 5, Y = 13}); 
             while (!cancellationTokenSource.IsCancellationRequested)
             {
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Eft.Core.Engine;
 
 namespace Eft.TestManager
 {
@@ -9,6 +10,7 @@ namespace Eft.TestManager
     {
         public static void Main(string[] args)
         {
+            Manager.Run().Wait();
         }
     }
 }

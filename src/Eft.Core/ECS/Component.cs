@@ -18,6 +18,9 @@ namespace Eft.Core.ECS
 
         public Guid EntityId { get; set; }
 
+        [JsonIgnore]
+        public bool Dirty { get; set; }
+
         public static string TableName(Type t)
         {
             string tName = "";
@@ -68,6 +71,7 @@ namespace Eft.Core.ECS
         public Component()
         {
             Id = Guid.NewGuid();
+            Dirty = false;
         }
 
         public virtual void Save(RethinkDB r, ConnectionPool pool)

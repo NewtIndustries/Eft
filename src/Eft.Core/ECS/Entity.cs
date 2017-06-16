@@ -17,6 +17,8 @@ namespace Eft.Core.ECS
         public Guid Id { get; set; }
 
         [JsonIgnore]
+        public bool Dirty { get; set; }
+        [JsonIgnore]
         public IEnumerable<Component> Components { get { return components;} }
         #endregion
 
@@ -41,7 +43,7 @@ namespace Eft.Core.ECS
         {
             Id = Guid.NewGuid();
             components = new List<Component>();
-
+            Dirty = false;
         }
         #endregion
         #region Methods
@@ -56,6 +58,7 @@ namespace Eft.Core.ECS
             c.EntityId = Id;
             components.Add(c);
             implementedComponents = Components.Select(Component.TableName).ToArray();
+            Dirty = true;
             return true;
         }
         public T GetComponent<T>() where T : Component

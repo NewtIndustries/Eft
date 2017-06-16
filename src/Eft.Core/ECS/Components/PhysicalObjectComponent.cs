@@ -20,7 +20,7 @@ namespace Eft.Core.ECS.Components
 
         public override ReqlFunction1 GetFilter()
         {
-            return expr => expr["X"].Gt(X - 5).Lt(X + 5) && expr["Y"].Gt(Y - 5).Lt(Y + 5);
+            return expr => expr["X"].Gt(X - 5) && expr["X"].Lt(X + 5) && expr["Y"].Gt(Y - 5) && expr["Y"].Lt(Y + 5);
         }
     }
     [TableName(Name = "PhysicalObject")]
