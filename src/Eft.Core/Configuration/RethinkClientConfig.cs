@@ -8,13 +8,13 @@ using RethinkDb.Driver.Net.Clustering;
 using Microsoft.Extensions.Configuration;
 namespace Eft.Core.Configuration
 {
-    public class RethinkClientConfig 
+    public class RethinkClientConfig : ConfigurationBase
     {
         
         private ICollection<string> ipAddresses;
         private IPoolingStrategy poolingStrategy;
         private bool discover;
-        private IConfigurationRoot root;
+        
         private string databaseName;
 
         public ICollection<string> IPAddresses { get { return ipAddresses;} }
@@ -22,13 +22,8 @@ namespace Eft.Core.Configuration
         public bool Discover { get { return discover;} }
         public string DatabaseName { get { return databaseName;} }
 
-        public RethinkClientConfig()
+        public RethinkClientConfig(): base("rethinksettings.json")
         {
-            var builder =
-                new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory())
-                    .AddJsonFile("rethinksettings.json");
-            root = builder.Build();
-
             discover = root["discover"] == "true";
             databaseName = root["databaseName"];
             ipAddresses = new List<string>();

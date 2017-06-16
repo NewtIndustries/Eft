@@ -23,18 +23,19 @@ namespace Eft.Core.Data
         private ConnectionPool pool;
 
         private Dictionary<string, Type> componentTypeMap;
-
+        private List<string> subObjectTableList;
         #endregion
         #region Properties
         #endregion
         #region Constructors
         public RethinkClient()
         {
-            
+
             r = RethinkDB.R;
             config = new RethinkClientConfig();
             connect();
             populateComponentTypes();
+            subObjectTableList = new List<string>();
         }
         #endregion
         #region Methods
@@ -46,7 +47,7 @@ namespace Eft.Core.Data
                 .Discover(config.Discover)
                 .Connect();
 
-            
+
 
         }
 
@@ -73,7 +74,7 @@ namespace Eft.Core.Data
                     }
                 }
             }
-            
+
 
         }
         #region Entity CRUD
@@ -81,7 +82,7 @@ namespace Eft.Core.Data
         public bool SaveEntity(Entity e)
         {
             r.Db(config.DatabaseName).Table("Entities").Insert(e).Run(pool);
-            
+
 
             // Save all components to components tables separately.   Each component has its own table named what the class name is.  
 
@@ -110,6 +111,17 @@ namespace Eft.Core.Data
         public bool SaveComponent(Component c)
         {
             var tName = Component.TableName(c);
+            var subProps =
+                c.GetType()
+                    .GetProperties()
+                    .Where(prop => prop.GetCustomAttribute<HasOwnTableAttribute>() != null).ToList();
+            if (subProps.Any())
+            {
+                foreach (var sp in subProps)
+                {
+                    SaveSubProperty(sp, c);
+                }
+            }
 
             if (c.GetType().GetTypeInfo().GetCustomAttribute<CustomSerializationAttribute>() != null)
             {
@@ -136,8 +148,34 @@ namespace Eft.Core.Data
             }
             else
             {
-                r.Db(config.DatabaseName).Table(tName).Insert(components).OptArg("conflict", Conflict.Update).Run(pool);
+                foreach (var c in components)
+                {
+                    SaveComponent(c);
+                }
+                //   r.Db(config.DatabaseName).Table(tName).Insert(components).OptArg("conflict", Conflict.Update).Run(pool);
             }
+            return true;
+        }
+
+        public bool SaveSubProperty(PropertyInfo prop, Component component)
+        {
+            var tName = prop.GetCustomAttribute<HasOwnTableAttribute>().TableName;
+            var pValue = prop.GetValue(component);
+            if (!subObjectTableList.Contains(tName))
+            {
+                r.Db(config.DatabaseName).TableCreate(tName).Run(pool);
+                r.Db(config.DatabaseName).Table(tName).IndexCreate("ComponentId").Run(pool);
+                
+                subObjectTableList.Add(tName);
+            }
+
+            var keys = r.Db(config.DatabaseName).Table(tName).Insert(pValue).OptArg("conflict", Conflict.Update).RunResult(pool).GeneratedKeys;
+            foreach (var key in keys)
+            {
+                r.Db(config.DatabaseName).Table(tName).Get(key).Update(new {ComponentId = component.Id}).Run(pool);
+            }
+
+
             return true;
         }
         /// <summary>
@@ -147,7 +185,7 @@ namespace Eft.Core.Data
         /// <returns></returns>
         public Entity LoadEntity(Guid id)
         {
-            var e =  r.Db(config.DatabaseName).Table("Entities").Get(id).RunResult<Entity>(pool);
+            var e = r.Db(config.DatabaseName).Table("Entities").Get(id).RunResult<Entity>(pool);
             LoadEntityComponents(e);
             return e;
         }
@@ -164,7 +202,7 @@ namespace Eft.Core.Data
             return
                 r.Db(config.DatabaseName)
                     .Table(Component.TableName<T>())
-                    .Filter(new {EntityId = id})
+                    .Filter(new { EntityId = id })
                     .RunResult<IEnumerable<T>>(pool)
                     .FirstOrDefault();
         }
@@ -172,9 +210,9 @@ namespace Eft.Core.Data
         public Component LoadComponent(Guid id, string table)
         {
             var type = componentTypeMap[table];
-            var obj = r.Db(config.DatabaseName).Table(table).Filter(new {EntityId = id}).RunResult<JArray>(pool);
+            var obj = r.Db(config.DatabaseName).Table(table).Filter(new { EntityId = id }).RunResult<JArray>(pool);
             return obj.FirstOrDefault()?.ToObject(type) as Component;
-            
+
         }
         public bool LoadEntityComponents(Entity e)
         {
@@ -186,7 +224,7 @@ namespace Eft.Core.Data
         }
         public IEnumerable<Entity> LoadEntitiesWithComponent<T>() where T : Component
         {
-            
+
             var ids = r.Db(config.DatabaseName).Table(Component.TableName<T>()).GetField("EntityId").RunResult<IEnumerable<Guid>>(pool);
             return LoadEntities(ids);
         }

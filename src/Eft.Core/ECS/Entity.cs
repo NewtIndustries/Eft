@@ -57,6 +57,7 @@ namespace Eft.Core.ECS
             }
             c.EntityId = Id;
             components.Add(c);
+            c.Dirty = true;
             implementedComponents = Components.Select(Component.TableName).ToArray();
             Dirty = true;
             return true;

@@ -25,19 +25,12 @@ namespace Eft.Core.Server
         }
         public static async Task  Run()
         {
-            //var begin = DateTime.Now;
-            for (int i = 0; i < 10; i++)
-            {
-                var entity = new Entity();
-                entity.AddComponent(new PhysicalObjectComponent());
-                db.SaveEntity(entity);
-            }
-            //var es = db.LoadEntitiesWithComponent<PhysicalObjectComponent>();
-            //var es = db.LoadEntitiesByComponentCriteria<PhysicalObjectComponent>(new PhysicalObjectProximityCriteria() {X = 5, Y = 13}); 
+            /// I'm pretty sure this is nonsensical to the GameServer's purpose.  It should have no timing based loops.  Just proxying objects/commands between players and engine.
             while (!cancellationTokenSource.IsCancellationRequested)
             {
 
                 // Do Work.
+
             }
         }
 
