@@ -33,4 +33,14 @@ namespace Eft.Core.Data
             TableName = tableName;
         }
     }
+    [AttributeUsage(AttributeTargets.Class)]
+    public class ComponentDependencyAttribute : Attribute
+    {
+        public Type DependencyType;
+
+        public ComponentDependencyAttribute(Type t)
+        {
+            DependencyType = t;
+        }
+    }
 }

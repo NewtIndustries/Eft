@@ -212,6 +212,54 @@ namespace Eft.Core.Data
             return (T)LoadComponent(id, Component.TableName<T>());
         }
 
+        public IEnumerable<T> LoadComponents<T>(ComponentCriteria<T> criteria = null) where T : Component
+        {
+            var tName = Component.TableName<T>();
+            if (criteria != null)
+            {
+                var objs =
+                    r.Db(config.DatabaseName)
+                        .Table(tName)
+                        .Filter(criteria.GetFilter())
+                        .RunResult<JArray>(pool)
+                        .ToObject<IEnumerable<T>>().ToList();
+                var subProps =
+                    (typeof(T).GetProperties().Where(x => x.GetCustomAttribute<SubComponentAttribute>() != null)).ToList();
+                if (subProps != null)
+                {
+                    foreach (var s in subProps)
+                    {
+                        foreach (var o in objs)
+                        {
+                            s.SetValue(o, LoadSubComponents(s, o.Id));
+                        }
+                    }
+                }
+
+                return objs;
+            }
+            else
+            {
+                var objs =
+                    r.Db(config.DatabaseName)
+                        .Table(tName)
+                        .RunResult<JArray>(pool)
+                        .ToObject<IEnumerable<T>>().ToList();
+                var subProps =
+                    (typeof(T).GetProperties().Where(x => x.GetCustomAttribute<SubComponentAttribute>() != null)).ToList();
+                if (subProps != null)
+                {
+                    foreach (var s in subProps)
+                    {
+                        foreach (var o in objs)
+                        {
+                            s.SetValue(o, LoadSubComponents(s, o.Id));
+                        }
+                    }
+                }
+                return objs;
+            }
+        } 
         public Component LoadComponent(Guid id, string table)
         {
             var type = componentTypeMap[table];

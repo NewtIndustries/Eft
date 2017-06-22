@@ -24,6 +24,7 @@ namespace Eft.Core.ECS.Components
         }
     }
     [TableName(Name = "PhysicalObject")]
+    //[ComponentDependency(typeof(ChildObjectTestComponent))]
     public class PhysicalObjectComponent : Component
     {
         public int X { get; set; }
