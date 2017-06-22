@@ -36,10 +36,12 @@ namespace Eft.Core.Engine
             
             while (!cancellationTokenSource.IsCancellationRequested)
             {
+                var start = DateTime.Now;
                 foreach (var s in systems)
                 {
                     s.Process();
                 }    
+                Console.WriteLine("Process time:" +(DateTime.Now - start).TotalMilliseconds);
                 Thread.Sleep(2000);
             }
 
