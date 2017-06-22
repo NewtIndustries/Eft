@@ -12,16 +12,15 @@ namespace Eft.Core.ECS.Components
     {
         public int SomeValue { get; set; }
 
-        [HasOwnTable("SubObjectTest")][JsonIgnore]
-        public List<object> ChildObjects { get; set; }
+        [SubComponent("SubComponentTestComponent")][JsonIgnore]
+        public List<SubComponentTestComponent> ChildObjects { get; set; }
 
         public ChildObjectTestComponent()
         {
-            SomeValue = 73;
-            ChildObjects = new List<object>();
+            ChildObjects = new List<SubComponentTestComponent>();
             for (var i = 0; i < 10; i++)
             {
-                ChildObjects.Add(new {Some = "Data"});
+                ChildObjects.Add(new SubComponentTestComponent());
             }
         }
 

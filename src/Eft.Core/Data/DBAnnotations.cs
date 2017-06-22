@@ -23,11 +23,12 @@ namespace Eft.Core.Data
     }
 
     [AttributeUsage(AttributeTargets.Property)]
-    public class HasOwnTableAttribute: Attribute
+    
+    public class SubComponentAttribute: Attribute
     {
         public string TableName;
 
-        public HasOwnTableAttribute(string tableName)
+        public SubComponentAttribute(string tableName)
         {
             TableName = tableName;
         }

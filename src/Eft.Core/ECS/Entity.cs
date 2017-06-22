@@ -55,7 +55,7 @@ namespace Eft.Core.ECS
             {
                 return false;
             }
-            c.EntityId = Id;
+            c.ParentId = Id;
             components.Add(c);
             c.Dirty = true;
             implementedComponents = Components.Select(Component.TableName).ToArray();

@@ -16,7 +16,7 @@ namespace Eft.Core.ECS
         [JsonProperty("id")]
         public Guid Id { get; set; }
 
-        public Guid EntityId { get; set; }
+        public Guid ParentId { get; set; }
 
         [JsonIgnore]
         public bool Dirty { get; set; }

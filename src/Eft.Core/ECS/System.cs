@@ -8,6 +8,14 @@ using Eft.Core.Server;
 
 namespace Eft.Core.ECS
 {
+    public enum SystemProcessType
+    {
+        Single,
+        Multi,
+        Distributed,
+        MultiDistributed
+    }
+
     public class System
     {
 

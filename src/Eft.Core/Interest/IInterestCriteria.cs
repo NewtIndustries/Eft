@@ -10,4 +10,9 @@ namespace Eft.Core.Interest
     {
         bool IsInterested(Entity source, Entity target);
     }
+
+    public interface IInterestCriteria<T>: IInterestCriteria where T : Component
+    {
+        
+    }
 }

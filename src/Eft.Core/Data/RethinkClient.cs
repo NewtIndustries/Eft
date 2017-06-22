@@ -23,7 +23,7 @@ namespace Eft.Core.Data
         private ConnectionPool pool;
 
         private Dictionary<string, Type> componentTypeMap;
-        private List<string> subObjectTableList;
+        
         #endregion
         #region Properties
         #endregion
@@ -35,7 +35,7 @@ namespace Eft.Core.Data
             config = new RethinkClientConfig();
             connect();
             populateComponentTypes();
-            subObjectTableList = new List<string>();
+           
         }
         #endregion
         #region Methods
@@ -53,7 +53,7 @@ namespace Eft.Core.Data
 
         private void populateComponentTypes()
         {
-            if (!r.Db(config.DatabaseName).TableList().Contains("Entities"))
+            if (!r.Db(config.DatabaseName).TableList().Contains("Entities").Run(pool))
             {
                 r.Db(config.DatabaseName).TableCreate("Entities").Run(pool);
             }
@@ -70,7 +70,7 @@ namespace Eft.Core.Data
                     if (!r.Db(config.DatabaseName).TableList().Contains(tName).Run<bool>(pool))
                     {
                         r.Db(config.DatabaseName).TableCreate(tName).Run(pool);
-                        r.Db(config.DatabaseName).Table(tName).IndexCreate("EntityId").Run(pool);
+                        r.Db(config.DatabaseName).Table(tName).IndexCreate("ParentId").Run(pool);
                         var props = t.GetProperties().Where(x => x.GetCustomAttribute<SecondaryIndexAttribute>() != null);
                         foreach (var p in props)
                         {
@@ -96,13 +96,14 @@ namespace Eft.Core.Data
             {
                 SaveComponent(c);
             }
-
-
+            e.Dirty = false;
+            
             return true;
         }
 
         public bool SaveEntities(IEnumerable<Entity> entities)
         {
+            entities = entities.ToList();
             r.Db(config.DatabaseName).Table("Entities").Insert(entities).Run(pool);
             foreach (var components in entities.Select(x => x.Components.Where(y => y.Dirty)).GroupBy(x => x.GetType()))
             {
@@ -111,6 +112,7 @@ namespace Eft.Core.Data
                     SaveComponents(v);
                 }
             }
+            entities.ToList().ForEach(x => x.Dirty = false);
             return true;
         }
 
@@ -120,12 +122,12 @@ namespace Eft.Core.Data
             var subProps =
                 c.GetType()
                     .GetProperties()
-                    .Where(prop => prop.GetCustomAttribute<HasOwnTableAttribute>() != null).ToList();
+                    .Where(prop => prop.GetCustomAttribute<SubComponentAttribute>() != null).ToList();
             if (subProps.Any())
             {
                 foreach (var sp in subProps)
                 {
-                    SaveSubProperty(sp, c);
+                    SaveSubComponent(sp, c);
                 }
             }
 
@@ -137,6 +139,7 @@ namespace Eft.Core.Data
             {
                 r.Db(config.DatabaseName).Table(tName).Insert(c).OptArg("conflict", Conflict.Update).Run(pool);
             }
+            c.Dirty = false;
             return true;
         }
 
@@ -158,28 +161,29 @@ namespace Eft.Core.Data
                 {
                     SaveComponent(c);
                 }
-                //   r.Db(config.DatabaseName).Table(tName).Insert(components).OptArg("conflict", Conflict.Update).Run(pool);
+                
             }
             return true;
         }
 
-        public bool SaveSubProperty(PropertyInfo prop, Component component)
+        public bool SaveSubComponent(PropertyInfo prop, Component component)
         {
-            var tName = prop.GetCustomAttribute<HasOwnTableAttribute>().TableName;
-            var pValue = prop.GetValue(component);
-            if (!subObjectTableList.Contains(tName))
-            {
-                r.Db(config.DatabaseName).TableCreate(tName).Run(pool);
-                r.Db(config.DatabaseName).Table(tName).IndexCreate("ComponentId").Run(pool);
+            var tName = prop.GetCustomAttribute<SubComponentAttribute>().TableName;
+            var pValue = prop.GetValue(component) as IEnumerable<Component>;
+            pValue.ToList().ForEach(x => x.ParentId = component.Id);
+            //if (!subComponentTableList.Contains(tName))
+            //{
+            //    r.Db(config.DatabaseName).TableCreate(tName).Run(pool);
+            //    r.Db(config.DatabaseName).Table(tName).IndexCreate("ComponentId").Run(pool);
                 
-                subObjectTableList.Add(tName);
-            }
+            //    subComponentTableList.Add(tName);
+            //}
 
-            var keys = r.Db(config.DatabaseName).Table(tName).Insert(pValue).OptArg("conflict", Conflict.Update).RunResult(pool).GeneratedKeys;
-            foreach (var key in keys)
-            {
-                r.Db(config.DatabaseName).Table(tName).Get(key).Update(new {ComponentId = component.Id}).Run(pool);
-            }
+            r.Db(config.DatabaseName).Table(tName).Insert(pValue).OptArg("conflict", Conflict.Update).Run(pool);
+            //foreach (var key in keys)
+            //{
+            //    r.Db(config.DatabaseName).Table(tName).Get(key).Update(new {ComponentId = component.Id}).Run(pool);
+            //}
 
 
             return true;
@@ -205,20 +209,35 @@ namespace Eft.Core.Data
 
         public T LoadComponent<T>(Guid id) where T : Component
         {
-            return
-                r.Db(config.DatabaseName)
-                    .Table(Component.TableName<T>())
-                    .Filter(new { EntityId = id })
-                    .RunResult<IEnumerable<T>>(pool)
-                    .FirstOrDefault();
+            return (T)LoadComponent(id, Component.TableName<T>());
         }
 
         public Component LoadComponent(Guid id, string table)
         {
             var type = componentTypeMap[table];
-            var obj = r.Db(config.DatabaseName).Table(table).Filter(new { EntityId = id }).RunResult<JArray>(pool);
-            return obj.FirstOrDefault()?.ToObject(type) as Component;
+            var obj = r.Db(config.DatabaseName).Table(table).Filter(new { ParentId = id }).RunResult<JArray>(pool).FirstOrDefault()?.ToObject(type) as Component;
 
+            var subProps = type.GetProperties().Where(x => x.GetCustomAttribute<SubComponentAttribute>() != null).ToList();
+            if (subProps.Any())
+            {
+                foreach (var subProp in subProps)
+                {
+                    subProp.SetValue(obj, LoadSubComponents(subProp, obj.Id));
+                }
+            }
+            return obj;
+
+        }
+
+        public IEnumerable<Component> LoadSubComponents(PropertyInfo prop, Guid componentId)
+        {
+            var table = prop.GetCustomAttribute<SubComponentAttribute>().TableName;
+
+            var obj =
+                r.Db(config.DatabaseName).Table(table).Filter(new {ParentId = componentId}).RunResult<JArray>(pool);
+            var results = obj.ToObject(prop.PropertyType) as IEnumerable<Component>;
+
+            return results;
         }
         public bool LoadEntityComponents(Entity e)
         {
@@ -231,7 +250,7 @@ namespace Eft.Core.Data
         public IEnumerable<Entity> LoadEntitiesWithComponent<T>() where T : Component
         {
 
-            var ids = r.Db(config.DatabaseName).Table(Component.TableName<T>()).GetField("EntityId").RunResult<IEnumerable<Guid>>(pool);
+            var ids = r.Db(config.DatabaseName).Table(Component.TableName<T>()).GetField("ParentId").RunResult<IEnumerable<Guid>>(pool);
             return LoadEntities(ids);
         }
 
@@ -242,7 +261,7 @@ namespace Eft.Core.Data
                 r.Db(config.DatabaseName)
                     .Table(Component.TableName<T>())
                     .Filter(criteria.GetFilter())
-                    .GetField("EntityId")
+                    .GetField("ParentId")
                     .RunResult<IEnumerable<Guid>>(pool);
             return LoadEntities(ids);
         }
